@@ -2,14 +2,26 @@
  * Order matters glad first then sdl2
  */
 #include <glad/glad.h>
+
 #define SDL_MAIN_HANDLED
+
 #include <SDL.h>
-#include <string>
 
 // SDL + glad initialization
 SDL_Window *create_window();
+
 void set_gl_context(SDL_Window *sdlWindow);
+
 void processInput(SDL_Window *sdlWindow);
+
+// load up and initalize gpu state
+void shaderCompilationLog(GLuint shaderId, const char *shaderType);
+
+void programLinkingLog(GLuint programId);
+
+void loadToGpu(GLuint &shaderProgramId, GLuint &vertexArrayObjectId);
+
+void draw(const GLuint &shaderProgramId, const GLuint &vertexArrayObjectId);
 
 // cap at monitor refresh rate
 int vsync = 1;
@@ -21,9 +33,15 @@ int main() {
     SDL_Window *sdlWindow = create_window();
     set_gl_context(sdlWindow);
 
-    while(window_open) {
+    // open gl state
+    GLuint shaderProgramId, vertexArrayObjectId;
+    loadToGpu(shaderProgramId, vertexArrayObjectId);
+
+    while (window_open) {
         glClearColor(0.0f, 0.15f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
+
+        draw(shaderProgramId, vertexArrayObjectId);
 
         processInput(sdlWindow);
         SDL_GL_SwapWindow(sdlWindow);
@@ -99,4 +117,109 @@ void processInput(SDL_Window *sdlWindow) {
                 break;
         }
     }
+}
+
+void programLinkingLog(GLuint programId) {
+    GLint status;
+    glGetProgramiv(programId, GL_LINK_STATUS, &status);
+    if (!status) {
+        GLchar infoLog[512];
+        glGetProgramInfoLog(programId, 512, NULL, infoLog);
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Open Gl error linking program %s", infoLog);
+    }
+}
+
+void shaderCompilationLog(GLuint shaderId, const char *shaderType) {
+    GLint status;
+    glGetShaderiv(shaderId, GL_COMPILE_STATUS, &status);
+    if (!status) {
+        GLchar infoLog[512];
+        glGetShaderInfoLog(shaderId, 512, NULL, infoLog);
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Open Gl error compiling shader %s %s", shaderType, infoLog);
+    }
+}
+
+void loadToGpu(GLuint &shaderProgramId, GLuint &vertexArrayObjectId) {
+    // Triangles setup
+    const GLfloat triangle[] = {
+            0.5f, 0.5f, 0.0f, //top right 0
+            -0.5f, 0.5f, 0.0f, //top left 1
+            0.5f, -0.5f, 0.0f, //bottom right 2
+            -0.5f, -0.5f, 0.0f, //bottom left 3
+    };
+
+    const GLuint indices[] = {
+            2, 0, 1,
+            2, 1, 3
+    };
+
+    const char *vertexShader = "#version 330 core\n"
+                               "  \n"
+                               "layout (location = 0) in vec3 position;\n"
+                               "\n"
+                               "void main()\n"
+                               "{\n"
+                               "    gl_Position = vec4(position.x, position.y, position.z, 1.0);\n"
+                               "}";
+
+    const char *fragmentShader = "#version 330 core\n"
+                                 "\n"
+                                 "out vec4 color;\n"
+                                 "\n"
+                                 "void main()\n"
+                                 "{\n"
+                                 "    color = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
+                                 "} ";
+
+    //shader creation
+    GLuint vsID = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vsID, 1, &vertexShader, NULL);
+    glCompileShader(vsID);
+
+    shaderCompilationLog(vsID, "Vertex");
+
+    GLuint fsId = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fsId, 1, &fragmentShader, NULL);
+    glCompileShader(fsId);
+
+    shaderCompilationLog(fsId, "Fragment");
+
+    //bind fragment and vertex shader to a single id;
+    // set shaderProgramId
+    shaderProgramId = glCreateProgram();
+    glAttachShader(shaderProgramId, vsID);
+    glAttachShader(shaderProgramId, fsId);
+    glLinkProgram(shaderProgramId);
+    programLinkingLog(shaderProgramId);
+    glDeleteShader(vsID);
+    glDeleteShader(fsId);
+
+    glUseProgram(shaderProgramId);
+    // set vaoId
+    glGenVertexArrays(1, &vertexArrayObjectId);
+
+    //bind vertices to video memory
+    GLuint vertexArrayBufferID;
+    glGenBuffers(1, &vertexArrayBufferID);
+
+    //bind vertices to video memory
+    GLuint vertexIndicesBufferID;
+    glGenBuffers(1, &vertexIndicesBufferID);
+
+    //start permanent copy of vertices to video memory
+    glBindVertexArray(vertexArrayObjectId);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexArrayBufferID);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(triangle), triangle, GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vertexIndicesBufferID);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GL_FLOAT), (void *) 0);
+    glEnableVertexAttribArray(0);
+    glBindVertexArray(0);
+}
+
+void draw(const GLuint &shaderProgramId, const GLuint &vertexArrayObjectId) {
+    glUseProgram(shaderProgramId);
+    glBindVertexArray(vertexArrayObjectId);
+    glDrawElements(GL_TRIANGLE_FAN, 6, GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
 }

@@ -9,7 +9,7 @@
 ### Clone Build Run
 Execute below from your projects folder
 ```shell
-git clone git@github.com:Z-EMB/SDL2-GLAD-GLM-Triangles.git && cd SDL2-GLAD-GLM-Triangles && mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && make SDL2_GLAD_GLM_Triangles && cd ../bin/ && ./SDL2_GLAD_GLM_Triangles
+git clone https://github.com/Z-EMB/SDL2-GLAD-GLM-Triangles.git && cd SDL2-GLAD-GLM-Triangles && mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && make SDL2_GLAD_GLM_Triangles && cd ../bin/ && ./SDL2_GLAD_GLM_Triangles
 ```
 
 ### Clean up

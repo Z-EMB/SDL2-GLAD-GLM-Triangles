@@ -1,0 +1,11 @@
+.idea
+.codelite
+*.mk
+Makefile
+*.project
+*.workspace
+Debug
+bin
+cmake-build-*
+build
+.vscode

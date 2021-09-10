@@ -12,14 +12,14 @@ SDL_Window *create_window();
 
 void set_gl_context(SDL_Window *sdlWindow);
 
-void processInput(SDL_Window *sdlWindow);
+void process_input(SDL_Window *sdlWindow);
 
-// load up and initalize gpu state
-void shaderCompilationLog(GLuint shaderId, const char *shaderType);
+// load up and initialize gpu state
+void shader_compilation_log(GLuint shaderId, const char *shaderType);
 
-void programLinkingLog(GLuint programId);
+void program_linking_log(GLuint programId);
 
-void loadToGpu(GLuint &shaderProgramId, GLuint &vertexArrayObjectId);
+void load_to_gpu(GLuint &shaderProgramId, GLuint &vertexArrayObjectId);
 
 void draw(const GLuint &shaderProgramId, const GLuint &vertexArrayObjectId);
 
@@ -35,7 +35,7 @@ int main() {
 
     // open gl state
     GLuint shaderProgramId, vertexArrayObjectId;
-    loadToGpu(shaderProgramId, vertexArrayObjectId);
+    load_to_gpu(shaderProgramId, vertexArrayObjectId);
 
     while (window_open) {
         glClearColor(0.0f, 0.15f, 0.3f, 1.0f);
@@ -43,7 +43,7 @@ int main() {
 
         draw(shaderProgramId, vertexArrayObjectId);
 
-        processInput(sdlWindow);
+        process_input(sdlWindow);
         SDL_GL_SwapWindow(sdlWindow);
     }
 
@@ -95,7 +95,7 @@ void set_gl_context(SDL_Window *sdlWindow) {
     }
 }
 
-void processInput(SDL_Window *sdlWindow) {
+void process_input(SDL_Window *sdlWindow) {
     SDL_Event inputEvent;
     while (SDL_PollEvent(&inputEvent)) {
         switch (inputEvent.type) {
@@ -119,7 +119,7 @@ void processInput(SDL_Window *sdlWindow) {
     }
 }
 
-void programLinkingLog(GLuint programId) {
+void program_linking_log(GLuint programId) {
     GLint status;
     glGetProgramiv(programId, GL_LINK_STATUS, &status);
     if (!status) {
@@ -129,7 +129,7 @@ void programLinkingLog(GLuint programId) {
     }
 }
 
-void shaderCompilationLog(GLuint shaderId, const char *shaderType) {
+void shader_compilation_log(GLuint shaderId, const char *shaderType) {
     GLint status;
     glGetShaderiv(shaderId, GL_COMPILE_STATUS, &status);
     if (!status) {
@@ -139,7 +139,7 @@ void shaderCompilationLog(GLuint shaderId, const char *shaderType) {
     }
 }
 
-void loadToGpu(GLuint &shaderProgramId, GLuint &vertexArrayObjectId) {
+void load_to_gpu(GLuint &shaderProgramId, GLuint &vertexArrayObjectId) {
     // Triangles setup
     const GLfloat triangle[] = {
             0.5f, 0.5f, 0.0f, //top right 0
@@ -176,13 +176,13 @@ void loadToGpu(GLuint &shaderProgramId, GLuint &vertexArrayObjectId) {
     glShaderSource(vsID, 1, &vertexShader, NULL);
     glCompileShader(vsID);
 
-    shaderCompilationLog(vsID, "Vertex");
+    shader_compilation_log(vsID, "Vertex");
 
     GLuint fsId = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fsId, 1, &fragmentShader, NULL);
     glCompileShader(fsId);
 
-    shaderCompilationLog(fsId, "Fragment");
+    shader_compilation_log(fsId, "Fragment");
 
     //bind fragment and vertex shader to a single id;
     // set shaderProgramId
@@ -190,7 +190,7 @@ void loadToGpu(GLuint &shaderProgramId, GLuint &vertexArrayObjectId) {
     glAttachShader(shaderProgramId, vsID);
     glAttachShader(shaderProgramId, fsId);
     glLinkProgram(shaderProgramId);
-    programLinkingLog(shaderProgramId);
+    program_linking_log(shaderProgramId);
     glDeleteShader(vsID);
     glDeleteShader(fsId);
 
